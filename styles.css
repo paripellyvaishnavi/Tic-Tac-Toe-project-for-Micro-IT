@@ -1,67 +1,190 @@
-body {
-    font-family: sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background-color: #f0f0f0;
-    margin: 0;
-}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tic-Tac-Toe</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to right, #e3f2fd, #bbdefb);
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
 
-.board {
-    display: grid;
-    grid-template-columns: repeat(3, 100px);
-    grid-template-rows: repeat(3, 100px);
-    gap: 10px;
-    margin-bottom: 20px;
-}
+        h1 {
+            font-size: 2.5em;
+            color: #0d47a1;
+            margin-bottom: 20px;
+        }
 
-.cell {
-    width: 100px;
-    height: 100px;
-    background-color: #fff;
-    border: 2px solid #333;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 60px;
-    cursor: pointer;
-    user-select: none;
-}
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 120px);
+            grid-template-rows: repeat(3, 120px);
+            gap: 15px;
+            background-color: #1565c0;
+            padding: 15px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.2);
+        }
 
-.cell:hover {
-    background-color: #eee;
-}
+        .cell {
+            width: 120px;
+            height: 120px;
+            background-color: #ffffff;
+            border: 4px solid #0d47a1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 64px;
+            font-weight: bold;
+            color: #0d47a1;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+            border-radius: 10px;
+        }
 
-.game-info {
-    text-align: center;
-    margin-bottom: 20px;
-}
+        .cell:hover {
+            background-color: #e3f2fd;
+            transform: scale(1.05);
+        }
 
-#turn {
-    font-size: 1.2em;
-    margin-bottom: 10px;
-}
+        .game-info {
+            margin-top: 30px;
+            text-align: center;
+        }
 
-#winner {
-    font-size: 1.5em;
-    font-weight: bold;
-    margin-bottom: 10px;
-    color: green;
-}
+        #turn {
+            font-size: 1.4em;
+            margin-bottom: 10px;
+            color: #1a237e;
+        }
 
-#resetButton {
-    padding: 10px 20px;
-    font-size: 1em;
-    cursor: pointer;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    transition: background-color 0.3s ease;
-}
+        #winner {
+            font-size: 1.6em;
+            font-weight: bold;
+            color: #2e7d32;
+            margin-top: 5px;
+        }
 
-#resetButton:hover {
-    background-color: #0056b3;
-}
+        #resetButton {
+            margin-top: 20px;
+            padding: 12px 24px;
+            font-size: 1em;
+            font-weight: bold;
+            color: white;
+            background-color: #0288d1;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        #resetButton:hover {
+            background-color: #01579b;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Tic Tac Toe</h1>
+
+    <div class="board">
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+    </div>
+
+    <div class="game-info">
+        <p id="turn">Loading...</p>
+        <p id="winner"></p>
+        <button id="resetButton">Reset Game</button>
+    </div>
+
+    <script>
+        const cells = document.querySelectorAll('.cell');
+        const turnDisplay = document.getElementById('turn');
+        const winnerDisplay = document.getElementById('winner');
+        const resetButton = document.getElementById('resetButton');
+        let gameActive = true;
+        let currentPlayer = 'X';
+        const backendPort = 8082; // Change to 8083 if needed
+
+        function updateFrontend(gameState) {
+            const board = gameState.board;
+
+            for (let i = 0; i < cells.length; i++) {
+                const row = Math.floor(i / 3);
+                const col = i % 3;
+                cells[i].textContent = board[row][col].trim();
+            }
+
+            turnDisplay.textContent = gameState.gameOver
+                ? (gameState.winner === 'D' ? "It's a draw!" : `Player ${gameState.winner} wins!`)
+                : `Player ${gameState.currentPlayer}'s turn`;
+
+            winnerDisplay.textContent = gameState.gameOver
+                ? (gameState.winner === 'D' ? "It's a draw!" : `Player ${gameState.winner} wins!`)
+                : '';
+
+            gameActive = !gameState.gameOver;
+            currentPlayer = gameState.currentPlayer;
+        }
+
+        function makeMove(row, col) {
+            if (!gameActive || cells[row * 3 + col].textContent !== '') return;
+
+            fetch(`http://localhost:${backendPort}/api/game/move?row=${row}&col=${col}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+            })
+            .then(response => response.json())
+            .then(data => updateFrontend(data))
+            .catch(error => console.error("Error making move:", error));
+        }
+
+        function getGameState() {
+            fetch(`http://localhost:${backendPort}/api/game/state`)
+                .then(response => response.json())
+                .then(data => updateFrontend(data))
+                .catch(error => console.error("Error getting state:", error));
+        }
+
+        function resetGame() {
+            fetch(`http://localhost:${backendPort}/api/game/reset`, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => updateFrontend(data))
+            .catch(error => console.error("Error resetting game:", error));
+        }
+
+        cells.forEach((cell, index) => {
+            const row = Math.floor(index / 3);
+            const col = index % 3;
+            cell.addEventListener('click', () => makeMove(row, col));
+        });
+
+        resetButton.addEventListener('click', resetGame);
+
+        getGameState();
+    </script>
+</body>
+</html>
+
+
